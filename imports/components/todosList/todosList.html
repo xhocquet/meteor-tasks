@@ -1,7 +1,14 @@
 <header>
-  <h1>Todo List</h1>
+  <h1>Todo List ( {{$ctrl.incompleteCount}} )</h1>
 
-  <form class="new-task" ng-submit="$ctrl.addTask($ctrl.newTask)">
+  <label class="hide-completed">
+    <input type="checkbox" ng-model="$ctrl.hideCompleted">
+    Hide Completed
+  </label>
+
+  <login-buttons></login-buttons>
+
+  <form class="new-task" ng-submit="$ctrl.addTask($ctrl.newTask)" ng-show="$ctrl.currentUser">
     <input type="text" name="text" ng-model="$ctrl.newTask" placeholder="Type to add new tasks">
   </form>
 </header>
@@ -11,7 +18,7 @@
     <button class="delete" ng-click="$ctrl.removeTask(task)">&times;</button>
     <input type="checkbox" ng-checked="task.checked" ng-click="$ctrl.setChecked(task)" class="toggle-checked">
     <span class="text">
-      {{task.text}}
+      <strong>{{task.username}}</strong> - {{task.text}}
     </span>
   </li>
 </ul>
