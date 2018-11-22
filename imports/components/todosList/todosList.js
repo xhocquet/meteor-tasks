@@ -1,36 +1,44 @@
-import angular from 'angular'
-import angularMeteor from 'angular-meteor'
+import angular from 'angular';
+import angularMeteor from 'angular-meteor';
 import { Meteor } from 'meteor/meteor';
+import { Tasks } from '../../api/tasks.js';
 
-import { Tasks } from '../../api/tasks.js'
-import template from './todosList.html'
+import template from './todosList.html';
 
 class TodosListCtrl {
   constructor($scope) {
-    $scope.viewModel(this)
+    $scope.viewModel(this);
 
-    this.hideCompleted = false
+    this.subscribe('tasks');
+
+    this.hideCompleted = false;
+    this.sortByText = false;
 
     this.helpers({
       tasks() {
-        const selector = {
-          owner: Meteor.userId(),
+        const selector = {};
+        const options = {
+          sort: {
+            createdAt: -1
+          }
         };
 
+        // If hide completed is checked, filter tasks
         if (this.getReactively('hideCompleted')) {
           selector.checked = {
             $ne: true
           };
         }
 
-        return Tasks.find(
-          selector,
-          {
-            sort: {
-              createdAt: -1,
-            },
-          },
-        )
+        // Custom sort
+        const sortByText = this.getReactively('sortByText')
+        if (sortByText) {
+          options.sort = {
+            text: 1,
+          }
+        }
+
+        return Tasks.find(selector, options);
       },
       incompleteCount() {
         return Tasks.find({
@@ -41,37 +49,40 @@ class TodosListCtrl {
       },
       currentUser() {
         return Meteor.user();
-      },
+      }
     })
   }
 
   addTask(newTask) {
-    Tasks.insert({
-      text: newTask,
-      createdAt: new Date(),
-      owner: Meteor.userId(),
-      username: Meteor.user().username,
-    })
+    // Insert a task into the collection
+    Meteor.call('tasks.insert', newTask);
 
-    this.newTask = ''
+    // Clear form
+    this.newTask = '';
   }
 
   setChecked(task) {
-    Tasks.update(task._id, {
-      $set: {
-        checked: !task.checked,
-      },
-    })
+    // Set the checked property to the opposite of its current value
+    Meteor.call('tasks.setChecked', task._id, !task.checked);
   }
 
   removeTask(task) {
-    Tasks.remove(task._id)
+    Meteor.call('tasks.remove', task._id);
+  }
+
+  setPrivate(task) {
+    Meteor.call('tasks.setPrivate', task._id, !task.private);
+  }
+
+  sortBy(field) {
+    Meteor.call('tasks.sortBy')
   }
 }
 
-export default angular
-  .module('todosList', [angularMeteor])
+export default angular.module('todosList', [
+  angularMeteor
+])
   .component('todosList', {
     templateUrl: 'imports/components/todosList/todosList.html',
-    controller: ['$scope', TodosListCtrl],
-  })
+    controller: ['$scope', TodosListCtrl]
+  });
